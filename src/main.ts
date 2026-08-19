@@ -6,7 +6,7 @@ import started from "electron-squirrel-startup";
 import { config } from "./native/config";
 import { initDiscordRpc } from "./native/discordRpc";
 import { initTray } from "./native/tray";
-import { initVirtualMic } from "./native/virtualMic";
+import "./native/virtualMic";
 import { BUILD_URL, createMainWindow, mainWindow } from "./native/window";
 
 // Squirrel-specific logic
@@ -52,7 +52,6 @@ if (acquiredLock) {
 
     initTray();
     initDiscordRpc();
-    initVirtualMic();
 
     // Windows specific fix for notifications
     if (process.platform === "win32") {

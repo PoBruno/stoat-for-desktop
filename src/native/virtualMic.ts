@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-// Disable any checks because node-pipewire doesn't have types for our submodule
+import { PipewireClient, PipewireNode } from "node-pipewire";
+
 import { app, ipcMain } from "electron";
 
 import { sinkName, sourceName } from "../constants";
@@ -16,7 +16,12 @@ export const isWayland =
 
 ipcMain.handle("getIsWayland", () => isWayland);
 
-export async function initVirtualMic() {
+let isPipewireStarted = false;
+let sourceNode: PipewireNode | undefined;
+let sinkNode: PipewireNode | undefined;
+let pipewireInterval: NodeJS.Timeout | undefined;
+
+ipcMain.handle("createVirtualMic", async () => {
   // Only available on Wayland
   if (!isWayland) return;
 
@@ -32,12 +37,15 @@ export async function initVirtualMic() {
       //@ts-ignore This module may not be found on non-linux builds.
     } = await import("node-pipewire"); //eslint-disable-line
 
-    createPwThread();
+    if (!isPipewireStarted) {
+      isPipewireStarted = true;
+      createPwThread();
+    }
 
     // Wait for pipewire thread to start and gather neccessary data
-    await delay(100);
+    await delay(50);
 
-    let nodes: any[] = getNodes();
+    let nodes = getNodes();
 
     let sinkFound = false;
     let sourceFound = false;
@@ -59,20 +67,20 @@ export async function initVirtualMic() {
     }
 
     // Wait for source and sink to save
-    await delay(100);
+    await delay(50);
 
     const appName = app.getName();
 
     nodes = getNodes();
-    const savedNodes: Record<number, any> = {};
-    const sourceNode = nodes.filter((node: any) => node.name === sourceName)[0];
-    const sinkNode = nodes.filter((node: any) => node.name === sinkName)[0];
+    const savedNodes: Record<number, PipewireNode> = {};
+    sourceNode = nodes.filter((node) => node.name === sourceName)[0];
+    sinkNode = nodes.filter((node) => node.name === sinkName)[0];
 
     linkNodesNameToId(sinkNode.name, sourceNode.id, false);
 
-    setInterval(() => {
-      const ourClients: Record<number, any> = {};
-      const paClients: any[] = [];
+    pipewireInterval = setInterval(() => {
+      const ourClients: Record<number, PipewireClient> = {};
+      const paClients: PipewireClient[] = [];
 
       const pids = getPids();
       const clients = getClients();
@@ -89,19 +97,17 @@ export async function initVirtualMic() {
 
       nodes = getNodes()
         // Only choose output streams
-        .filter(
-          (node: any) => node.props["media.class"] === "Stream/Output/Audio",
-        )
+        .filter((node) => node.props["media.class"] === "Stream/Output/Audio")
         // Ignore any nodes from electron's processes
         .filter(
-          (node: any) =>
+          (node) =>
             !Object.values(ourClients)
               .map((client) => client.id)
               .includes(Number(node.props["client.id"])),
         )
         // Ignore any nodes from pulse audio processes for the app
         .filter(
-          (node: any) =>
+          (node) =>
             !paClients
               .map((client) => client.id)
               .includes(Number(node.props["client.id"])),
@@ -112,7 +118,8 @@ export async function initVirtualMic() {
         // If this node hasn't been seen before (ie. new node)
         if (!savedNodes[idAsNum]) {
           // Link all of the new node's outputs to our virtual sink
-          linkNodesNameToId(node.name, sinkNode.id, false);
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          linkNodesNameToId(node.name, sinkNode!.id, false);
           savedNodes[idAsNum] = node;
         }
       }
@@ -121,13 +128,35 @@ export async function initVirtualMic() {
       for (const id in savedNodes) {
         const asNum = Number(id);
         if (!nodes.find((node) => node.id === asNum)) {
-          savedNodes[asNum] = void 0;
+          delete savedNodes[asNum];
         }
       }
     }, 1000);
   } catch {
-    console.log(
+    console.warn(
       "node-pipewire failed to load. Screen share audio will not work on linux wayland.",
     );
   }
-}
+});
+
+ipcMain.handle("destroyVirtualMic", async () => {
+  // Only available on Wayland
+  if (!isWayland) return;
+
+  try {
+    const {
+      destroyObject,
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-ignore This module may not be found on non-linux builds.
+    } = await import("node-pipewire"); //eslint-disable-line
+    if (pipewireInterval) {
+      clearInterval(pipewireInterval);
+      destroyObject(sinkNode!.id);
+      destroyObject(sourceNode!.id);
+    }
+  } catch {
+    console.warn(
+      "node-pipewire failed to load. Screen share audio will not work on linux wayland.",
+    );
+  }
+});

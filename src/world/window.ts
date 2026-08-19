@@ -34,4 +34,6 @@ contextBridge.exposeInMainWorld("native", {
     ipcRenderer.send("screenPickerCallback", idx, audio),
 
   isWayland: () => ipcRenderer.invoke("getIsWayland"),
+  createVirtualMic: () => ipcRenderer.invoke("createVirtualMic"),
+  destroyVirtualMic: () => ipcRenderer.invoke("destroyVirtualMic"),
 });
