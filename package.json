@@ -1,9 +1,9 @@
 {
-  "name": "stoat-desktop",
-  "productName": "stoat-desktop",
+  "name": "monga-desktop",
+  "productName": "Monga",
   "version": "1.5.3",
   "main": ".vite/build/main.js",
-  "repository": "stoatchat/desktop",
+  "repository": "PoBruno/stoat-for-desktop",
   "scripts": {
     "start": "electron-forge start -- --no-sandbox",
     "package": "electron-forge package",

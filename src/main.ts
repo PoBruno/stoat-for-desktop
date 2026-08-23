@@ -1,6 +1,5 @@
-import { IUpdateInfo, updateElectronApp } from "update-electron-app";
 
-import { BrowserWindow, Notification, app, shell } from "electron";
+import { BrowserWindow, app, shell } from "electron";
 import started from "electron-squirrel-startup";
 
 import { config } from "./native/config";
@@ -24,20 +23,15 @@ if (!config.hardwareAcceleration) {
 // ensure only one copy of the application can run
 const acquiredLock = app.requestSingleInstanceLock();
 
-const onNotifyUser = (_info: IUpdateInfo) => {
-  const notification = new Notification({
-    title: "Update Available",
-    body: "Restart the app to install the update.",
-    silent: true,
-  });
-
-  notification.show();
-};
+// Auto-update desativado neste fork.
+//
+// O `update-electron-app` deriva o feed de `package.json.repository`, que
+// apontava para o repositorio oficial do Stoat. Mantido ligado, o app se
+// atualizaria para o binario oficial e perderia o dominio padrao configurado
+// em src/native/window.ts. Para religar, aponte `repository` para o seu
+// proprio fork e publique releases la.
 
 if (acquiredLock) {
-  // start auto update logic
-  updateElectronApp({ onNotifyUser });
-
   // create and configure the app when electron is ready
   app.on("ready", () => {
     // create window and application contexts
@@ -56,7 +50,7 @@ if (acquiredLock) {
 
     // Windows specific fix for notifications
     if (process.platform === "win32") {
-      app.setAppUserModelId("chat.stoat.notifications");
+      app.setAppUserModelId("br.dev.monga.notifications");
     }
   });
 

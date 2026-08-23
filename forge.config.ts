@@ -1,4 +1,3 @@
-import { MakerAppX } from "@electron-forge/maker-appx";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerFlatpak } from "@electron-forge/maker-flatpak";
 import { MakerFlatpakOptionsConfig } from "@electron-forge/maker-flatpak/dist/Config";
@@ -15,52 +14,73 @@ import path from "node:path";
 // import { globSync } from "node:fs";
 
 const STRINGS = {
-  author: "Revolt Platforms LTD",
-  name: "Stoat",
-  execName: "stoat-desktop",
-  description: "Open source user-first chat platform.",
+  author: "PoBruno",
+  name: "Monga",
+  execName: "monga",
+  description: "Chat da Monga.",
 };
+
+/** Instancia que o app abre por padrao (ver src/native/window.ts) */
+const INSTANCE_URL = "https://discord.monga.dev.br";
 
 const ASSET_DIR = "assets/desktop";
 
 /**
  * Build targets for the desktop app
+ *
+ * Cada maker declara as plataformas que suporta, entao o Forge ja filtra
+ * pelo host: Squirrel so roda no Windows, Deb/Flatpak so no Linux.
  */
 const makers: ForgeConfig["makers"] = [
   new MakerSquirrel({
     name: STRINGS.name,
     authors: STRINGS.author,
-    // todo: hoist this
-    iconUrl: `https://stoat.chat/app/assets/icon-DUSNE-Pb.ico`,
+    // Icone mostrado em "Adicionar ou remover programas".
+    // Servido pela propria instancia (o mesmo arquivo de assets/desktop/icon.ico).
+    iconUrl: `${INSTANCE_URL}/assets/icon-BKIbMyOd.ico`,
     // todo: loadingGif
     setupIcon: `${ASSET_DIR}/icon.ico`,
     description: STRINGS.description,
     exe: `${STRINGS.execName}.exe`,
     setupExe: `${STRINGS.execName}-setup.exe`,
-    copyright: "Copyright (C) 2025 Revolt Platforms LTD",
+    copyright: `Copyright (C) ${new Date().getFullYear()} ${STRINGS.author}`,
   }),
   new MakerZIP({}),
-  new MakerFlatpak({
+  new MakerDeb({
     options: {
-      id: "chat.stoat.StoatDesktop",
-      description: STRINGS.description,
       productName: STRINGS.name,
       productDescription: STRINGS.description,
-      runtimeVersion: "25.08",
-      icon: {
-        "16x16": `${ASSET_DIR}/hicolor/16x16.png`,
-        "32x32": `${ASSET_DIR}/hicolor/32x32.png`,
-        "64x64": `${ASSET_DIR}/hicolor/64x64.png`,
-        "128x128": `${ASSET_DIR}/hicolor/128x128.png`,
-        "256x256": `${ASSET_DIR}/hicolor/256x256.png`,
-        "512x512": `${ASSET_DIR}/hicolor/512x512.png`,
-      } as unknown,
       categories: ["Network"],
-      modules: [
-        // use the latest zypak -- Electron sandboxing for Flatpak
-        {
-          name: "zypak",
-          sources: [
+      icon: `${ASSET_DIR}/icon.png`,
+    },
+  }),
+];
+
+// Flatpak exige `flatpak-builder` + runtimes (~GBs) instalados na maquina.
+// Fora do caminho padrao; habilite com ENABLE_FLATPAK=1.
+if (process.env.ENABLE_FLATPAK) {
+  makers.push(
+    new MakerFlatpak({
+      options: {
+        id: "br.dev.monga.Desktop",
+        description: STRINGS.description,
+        productName: STRINGS.name,
+        productDescription: STRINGS.description,
+        runtimeVersion: "25.08",
+        icon: {
+          "16x16": `${ASSET_DIR}/hicolor/16x16.png`,
+          "32x32": `${ASSET_DIR}/hicolor/32x32.png`,
+          "64x64": `${ASSET_DIR}/hicolor/64x64.png`,
+          "128x128": `${ASSET_DIR}/hicolor/128x128.png`,
+          "256x256": `${ASSET_DIR}/hicolor/256x256.png`,
+          "512x512": `${ASSET_DIR}/hicolor/512x512.png`,
+        } as unknown,
+        categories: ["Network"],
+        modules: [
+          // use the latest zypak -- Electron sandboxing for Flatpak
+          {
+            name: "zypak",
+            sources: [
             {
               type: "git",
               url: "https://github.com/refi64/zypak",
@@ -92,31 +112,10 @@ const makers: ForgeConfig["makers"] = [
         "--talk-name=com.canonical.Unity",
         "--env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons",
         "--env=ELECTRON_TRASH=gio",
-        "--env=TMPDIR=xdg-run/app/chat.stoat.StoatDesktop",
+        "--env=TMPDIR=xdg-run/app/br.dev.monga.Desktop",
       ],
-      files: [],
-    } as MakerFlatpakOptionsConfig,
-  }),
-];
-
-// skip these makers in CI/CD
-if (!process.env.PLATFORM) {
-  makers.push(
-    // must be manually built (freezes CI process)
-    // not much use in being published anyhow
-    new MakerAppX({
-      certPass: "",
-      packageExecutable: `app\\${STRINGS.execName}.exe`,
-      publisher: "CN=B040CC7E-0016-4AF5-957F-F8977A6CFA3B",
-    }),
-    // testing purposes
-    new MakerDeb({
-      options: {
-        productName: STRINGS.name,
-        productDescription: STRINGS.description,
-        categories: ["Network"],
-        icon: `${ASSET_DIR}/icon.png`,
-      },
+        files: [],
+      } as MakerFlatpakOptionsConfig,
     }),
   );
 }
