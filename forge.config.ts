@@ -49,7 +49,16 @@ const makers: ForgeConfig["makers"] = [
   new MakerDeb({
     options: {
       productName: STRINGS.name,
+      // `description` alem de `productDescription`: o
+      // electron-installer-debian recusa o pacote sem ela, e o package.json
+      // nao tinha esse campo. Sem isto o build de Linux morre no final,
+      // depois de empacotar tudo.
+      description: STRINGS.description,
       productDescription: STRINGS.description,
+      // O instalador procura o binario pelo `name` do package.json
+      // ("monga-desktop"), mas o packager gera "monga" via executableName.
+      // Sem apontar aqui ele nao acha o executavel.
+      bin: STRINGS.execName,
       categories: ["Network"],
       icon: `${ASSET_DIR}/icon.png`,
     },
