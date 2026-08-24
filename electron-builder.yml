@@ -12,18 +12,18 @@
 # A alternativa oficial do Forge seria o WiX (.msi), que exige o WiX Toolset
 # e o .NET Framework 3.5 instalados na maquina de build.
 
-appId: br.dev.monga.Desktop
-productName: Monga
+appId: chat.stoat.StoatDesktop
+productName: Stoat
 copyright: Copyright (C) 2026 PoBruno
 
 directories:
   output: out/make/nsis
 
 # O nome nao leva a versao de proposito: o app web aponta para
-# releases/latest/download/monga-setup.exe, e assim esse link continua
+# releases/latest/download/stoat-setup.exe, e assim esse link continua
 # valendo em toda versao futura.
 nsis:
-  artifactName: monga-setup.exe
+  artifactName: stoat-setup.exe
   # `false` e o que traz o assistente; `true` instalaria direto, sem perguntar
   # nada -- exatamente o comportamento do Squirrel que queremos abandonar.
   oneClick: false
@@ -32,7 +32,7 @@ nsis:
   perMachine: false
   createDesktopShortcut: true
   createStartMenuShortcut: true
-  shortcutName: Monga
+  shortcutName: Stoat
   installerIcon: assets/desktop/icon.ico
   uninstallerIcon: assets/desktop/icon.ico
   installerHeaderIcon: assets/desktop/icon.ico

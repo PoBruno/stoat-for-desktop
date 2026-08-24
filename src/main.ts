@@ -50,7 +50,7 @@ if (acquiredLock) {
 
     // Windows specific fix for notifications
     if (process.platform === "win32") {
-      app.setAppUserModelId("br.dev.monga.notifications");
+      app.setAppUserModelId("chat.stoat.StoatDesktop");
     }
   });
 

@@ -14,9 +14,9 @@ import path from "node:path";
 
 const STRINGS = {
   author: "PoBruno",
-  name: "Monga",
-  execName: "monga",
-  description: "Chat da Monga.",
+  name: "Stoat",
+  execName: "stoat",
+  description: "Stoat desktop client.",
 };
 
 const ASSET_DIR = "assets/desktop";
@@ -51,7 +51,7 @@ const makers: ForgeConfig["makers"] = [
       description: STRINGS.description,
       productDescription: STRINGS.description,
       // O instalador procura o binario pelo `name` do package.json
-      // ("monga-desktop"), mas o packager gera "monga" via executableName.
+      // ("stoat-desktop"), mas o packager gera "stoat" via executableName.
       // Sem apontar aqui ele nao acha o executavel.
       bin: STRINGS.execName,
       categories: ["Network"],
@@ -66,7 +66,7 @@ if (process.env.ENABLE_FLATPAK) {
   makers.push(
     new MakerFlatpak({
       options: {
-        id: "br.dev.monga.Desktop",
+        id: "chat.stoat.StoatDesktop",
         description: STRINGS.description,
         productName: STRINGS.name,
         productDescription: STRINGS.description,
@@ -116,7 +116,7 @@ if (process.env.ENABLE_FLATPAK) {
         "--talk-name=com.canonical.Unity",
         "--env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons",
         "--env=ELECTRON_TRASH=gio",
-        "--env=TMPDIR=xdg-run/app/br.dev.monga.Desktop",
+        "--env=TMPDIR=xdg-run/app/chat.stoat.StoatDesktop",
       ],
         files: [],
       } as MakerFlatpakOptionsConfig,

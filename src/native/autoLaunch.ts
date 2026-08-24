@@ -3,7 +3,7 @@ import AutoLaunch from "auto-launch";
 import { ipcMain } from "electron";
 
 export const autoLaunch = new AutoLaunch({
-  name: "Monga",
+  name: "Stoat",
 });
 
 ipcMain.handle("getAutostart", async () => {

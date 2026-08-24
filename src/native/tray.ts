@@ -25,7 +25,7 @@ export function initTray() {
   const trayIcon = createTrayIcon();
   tray = new Tray(trayIcon);
   updateTrayMenu();
-  tray.setToolTip("Monga");
+  tray.setToolTip("Stoat");
   tray.setImage(trayIcon);
   tray.on("click", () => {
     if (mainWindow.isVisible()) {
@@ -40,7 +40,7 @@ export function initTray() {
 export function updateTrayMenu() {
   tray.setContextMenu(
     Menu.buildFromTemplate([
-      { label: "Monga", type: "normal", enabled: false },
+      { label: "Stoat", type: "normal", enabled: false },
       {
         label: "Version",
         type: "submenu",

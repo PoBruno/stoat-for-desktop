@@ -19,10 +19,10 @@ export async function initDiscordRpc() {
         state: "discord.monga.dev.br",
         details: "Chatting with others",
         largeImageKey: "qr",
-        largeImageText: "Monga",
+        largeImageText: "Stoat",
         buttons: [
           {
-            label: "Monga",
+            label: "Stoat",
             url: "https://discord.monga.dev.br/",
           },
         ],
