@@ -1,0 +1,44 @@
+# Instalador do Windows (NSIS).
+#
+# O Electron Forge continua responsavel por empacotar o app; isto aqui so
+# transforma a pasta ja empacotada num instalador de verdade.
+#
+# Motivo de existir: o MakerSquirrel do Forge gera um "setup.exe" que instala
+# em silencio no %LocalAppData% e abre o app. Nao pergunta nada, nao deixa
+# escolher pasta e nao cria atalho no Menu Iniciar -- para quem baixa, parece
+# que executou o programa em vez de instalar. O NSIS entrega o assistente que
+# as pessoas esperam no Windows.
+#
+# A alternativa oficial do Forge seria o WiX (.msi), que exige o WiX Toolset
+# e o .NET Framework 3.5 instalados na maquina de build.
+
+appId: br.dev.monga.Desktop
+productName: Monga
+copyright: Copyright (C) 2026 PoBruno
+
+directories:
+  output: out/make/nsis
+
+# O nome nao leva a versao de proposito: o app web aponta para
+# releases/latest/download/monga-setup.exe, e assim esse link continua
+# valendo em toda versao futura.
+nsis:
+  artifactName: monga-setup.exe
+  # `false` e o que traz o assistente; `true` instalaria direto, sem perguntar
+  # nada -- exatamente o comportamento do Squirrel que queremos abandonar.
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  # Deixa instalar sem privilegio de administrador (instala so para o usuario).
+  perMachine: false
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Monga
+  installerIcon: assets/desktop/icon.ico
+  uninstallerIcon: assets/desktop/icon.ico
+  installerHeaderIcon: assets/desktop/icon.ico
+  deleteAppDataOnUninstall: false
+  # Idioma do assistente: portugues do Brasil, com ingles como alternativa.
+  displayLanguageSelector: false
+  installerLanguages:
+    - pt_BR
+    - en_US

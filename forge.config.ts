@@ -1,7 +1,6 @@
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerFlatpak } from "@electron-forge/maker-flatpak";
 import { MakerFlatpakOptionsConfig } from "@electron-forge/maker-flatpak/dist/Config";
-import { MakerSquirrel } from "@electron-forge/maker-squirrel";
 import { MakerZIP } from "@electron-forge/maker-zip";
 import { FusesPlugin } from "@electron-forge/plugin-fuses";
 import { VitePlugin } from "@electron-forge/plugin-vite";
@@ -20,31 +19,27 @@ const STRINGS = {
   description: "Chat da Monga.",
 };
 
-/** Instancia que o app abre por padrao (ver src/native/window.ts) */
-const INSTANCE_URL = "https://discord.monga.dev.br";
-
 const ASSET_DIR = "assets/desktop";
 
 /**
  * Build targets for the desktop app
  *
  * Cada maker declara as plataformas que suporta, entao o Forge ja filtra
- * pelo host: Squirrel so roda no Windows, Deb/Flatpak so no Linux.
+ * pelo host: Deb/Flatpak so rodam no Linux.
+ *
+ * O instalador do Windows NAO sai daqui. O MakerSquirrel, que era o alvo
+ * padrao, gera um setup que instala em silencio no %LocalAppData% e abre o
+ * app: sem assistente, sem escolher pasta, sem atalho no Menu Iniciar. Quem
+ * baixava achava que tinha apenas executado o programa.
+ *
+ * O Squirrel existe para dar atualizacao automatica, e este fork a desativa
+ * de proposito (ver o comentario em src/main.ts), entao ele so entregava a
+ * pior experiencia de instalacao sem nenhuma contrapartida.
+ *
+ * No lugar dele, o hook `postMake` chama o electron-builder para gerar um
+ * instalador NSIS a partir da pasta que o Forge acabou de empacotar.
  */
 const makers: ForgeConfig["makers"] = [
-  new MakerSquirrel({
-    name: STRINGS.name,
-    authors: STRINGS.author,
-    // Icone mostrado em "Adicionar ou remover programas".
-    // Servido pela propria instancia (o mesmo arquivo de assets/desktop/icon.ico).
-    iconUrl: `${INSTANCE_URL}/assets/icon-BKIbMyOd.ico`,
-    // todo: loadingGif
-    setupIcon: `${ASSET_DIR}/icon.ico`,
-    description: STRINGS.description,
-    exe: `${STRINGS.execName}.exe`,
-    setupExe: `${STRINGS.execName}-setup.exe`,
-    copyright: `Copyright (C) ${new Date().getFullYear()} ${STRINGS.author}`,
-  }),
   new MakerZIP({}),
   new MakerDeb({
     options: {
@@ -166,6 +161,54 @@ const config: ForgeConfig = {
           { recursive: true },
         );
       }
+    },
+    /**
+     * Gera o instalador do Windows depois que o Forge empacota.
+     *
+     * Fica num hook, e nao num maker, porque o electron-builder nao e um
+     * maker do Forge. Assim `pnpm make` continua sendo o unico comando
+     * necessario, em vez de exigir um segundo passo que alguem esqueceria.
+     *
+     * `--prepackaged` reaproveita a pasta que o Forge acabou de produzir:
+     * o electron-builder so monta o instalador, sem reempacotar o app.
+     */
+    postMake: async (_config, results) => {
+      if (process.platform !== "win32") return results;
+
+      const empacotado = path.resolve("out", `${STRINGS.name}-win32-x64`);
+      if (!fs.existsSync(empacotado)) {
+        console.warn(`[nsis] pasta empacotada nao encontrada: ${empacotado}`);
+        return results;
+      }
+
+      const { execFileSync } = await import("node:child_process");
+
+      // Chama o cli.js direto com o proprio node, em vez de `npx`. No Windows
+      // o Node recusa executar arquivos .cmd desde a correcao do
+      // CVE-2024-27980, e `npx.cmd` falha com um EINVAL que nao explica nada.
+      const cli = require.resolve("electron-builder/cli.js");
+
+      console.log("[nsis] gerando o instalador do Windows");
+      execFileSync(
+        process.execPath,
+        [cli, "--prepackaged", empacotado, "--win", "nsis"],
+        { stdio: "inherit" },
+      );
+
+      const instalador = path.resolve(
+        "out/make/nsis",
+        `${STRINGS.execName}-setup.exe`,
+      );
+      if (fs.existsSync(instalador)) {
+        results.push({
+          artifacts: [instalador],
+          packageJSON: JSON.parse(fs.readFileSync("package.json", "utf-8")),
+          platform: "win32",
+          arch: "x64",
+        });
+      }
+
+      return results;
     },
   },
   plugins: [
