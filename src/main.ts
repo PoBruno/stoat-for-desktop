@@ -20,6 +20,29 @@ if (!config.hardwareAcceleration) {
   app.disableHardwareAcceleration();
 }
 
+// Wayland: rodar nativo e capturar tela pelo portal.
+//
+// Sem estas duas coisas o Electron cai no XWayland, e ali o compartilhamento
+// de tela ou nao lista nada ou entrega uma janela preta — o compositor nao
+// deixa um cliente X enxergar as janelas dos outros. O sintoma parece defeito
+// do aplicativo e e o servidor grafico fazendo o que deve.
+//
+// - `ozone-platform-hint=auto` usa Wayland quando ha sessao Wayland, e X11
+//   quando nao ha. Nao quebra quem esta em X11.
+// - `WebRTCPipeWireCapturer` faz o Chromium pedir a tela ao
+//   `xdg-desktop-portal`, que e quem mostra o seletor do sistema e devolve o
+//   fluxo pelo PipeWire. E o mesmo caminho que o Discord usa.
+//
+// Fica antes de `app.whenReady()` de proposito: switches lidos depois disso
+// sao ignorados sem aviso.
+if (process.platform === "linux") {
+  app.commandLine.appendSwitch("ozone-platform-hint", "auto");
+  app.commandLine.appendSwitch(
+    "enable-features",
+    "WebRTCPipeWireCapturer,WaylandWindowDecorations",
+  );
+}
+
 // ensure only one copy of the application can run
 const acquiredLock = app.requestSingleInstanceLock();
 

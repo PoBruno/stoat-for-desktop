@@ -1,11 +1,14 @@
 [Desktop Entry]
 Name=Stoat
 Comment=Open source, user-first chat platform
-Exec=stoat-desktop
+# Precisa bater com `execName` em forge.config.ts. Apontava para
+# `stoat-desktop`, binario que o empacotador nao gera — o atalho existia e
+# nao abria nada.
+Exec=stoat %U
 Terminal=false
 Type=Application
 Icon=chat.stoat.StoatDesktop
-Categories=Network;InstantMessaging
-StartupWMClass=stoat-desktop
+Categories=Network;InstantMessaging;
+StartupWMClass=stoat
 X-Desktop-File-Install-Version=0.26
 X-Flatpak=chat.stoat.StoatDesktop

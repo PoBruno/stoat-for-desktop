@@ -42,3 +42,64 @@ nsis:
   installerLanguages:
     - pt_BR
     - en_US
+
+# ---------------------------------------------------------------------------
+# Pacotes de Linux
+#
+# Tres formatos porque nao ha um que sirva a todos:
+#
+#   .deb            Debian, Ubuntu e derivados
+#   .pkg.tar.zst    Arch e derivados (CachyOS, Manjaro, EndeavourOS)
+#   .AppImage       o resto -- nao instala nada, roda de onde estiver
+#
+# O formato NAO decide se o compartilhamento de tela funciona. Isso depende do
+# app falar com o `xdg-desktop-portal` e o PipeWire, e disso cuidam as flags
+# do Chromium em src/main.ts.
+# ---------------------------------------------------------------------------
+linux:
+  category: Network;InstantMessaging
+  synopsis: Open source, user-first chat platform
+  # Precisa bater com `execName` do forge.config.ts: e daqui que sai tanto o
+  # nome do binario quanto o `Exec=` do atalho.
+  executableName: stoat
+  desktop:
+    entry:
+      StartupWMClass: stoat
+      Categories: Network;InstantMessaging;
+  target:
+    - deb
+    - pacman
+    - AppImage
+
+deb:
+  artifactName: stoat-amd64.deb
+  depends:
+    - libgtk-3-0
+    - libnotify4
+    - libnss3
+    - libxss1
+    - libxtst6
+    - xdg-utils
+    - libatspi2.0-0
+    - libsecret-1-0
+
+pacman:
+  artifactName: stoat-x86_64.pkg.tar.zst
+  # zstd e o que da a extensao .zst e o que o Arch usa hoje.
+  compression: zstd
+  # A lista PADRAO do electron-builder cita pacotes que sairam do Arch
+  # (`http-parser`, `libappindicator-gtk3`). Com ela o arquivo ate e gerado,
+  # mas o `pacman -U` recusa instalar por dependencia inexistente -- e a falha
+  # so aparece na maquina de quem baixou.
+  depends:
+    - gtk3
+    - nss
+    - alsa-lib
+    - libnotify
+    - libxss
+    - libxtst
+    - xdg-utils
+    - at-spi2-core
+
+appImage:
+  artifactName: stoat-x86_64.AppImage
