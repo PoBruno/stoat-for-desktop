@@ -4,6 +4,7 @@ import started from "electron-squirrel-startup";
 import { join } from "node:path";
 
 import { config } from "./native/config";
+import { encerrarAnotacao, registrarAnotacao } from "./native/anotacao";
 import { initDiscordRpc } from "./native/discordRpc";
 import { initTray } from "./native/tray";
 import { initVirtualMic } from "./native/virtualMic";
@@ -71,6 +72,7 @@ if (acquiredLock) {
     initTray();
     initDiscordRpc();
     initVirtualMic();
+    registrarAnotacao();
 
     // Windows specific fix for notifications
     if (process.platform === "win32") {
@@ -93,6 +95,11 @@ if (acquiredLock) {
       app.quit();
     }
   });
+
+  // A sobreposicao de anotacao e uma BrowserWindow. Se ela sobreviver ao
+  // encerramento, o processo fica pendurado sem nenhuma janela visivel --
+  // ela e `focusable: false` e `skipTaskbar`, entao ninguem consegue fecha-la.
+  app.on("before-quit", () => encerrarAnotacao());
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld("native", {
         name: string;
         isFullScreen: boolean;
         image?: string;
+        displayId?: string;
       }[],
     ) => void,
   ) => {
@@ -44,4 +45,26 @@ contextBridge.exposeInMainWorld("native", {
    */
   popoutAlwaysOnTop: (ligado: boolean) =>
     ipcRenderer.send("popoutAlwaysOnTop", ligado),
+
+  /**
+   * Abre a sobreposicao de anotacao sobre o display capturado.
+   *
+   * Como o `popoutAlwaysOnTop`, a presenca desta funcao e o que o web usa para
+   * decidir se a feature existe: em app antigo ela nao esta na ponte e o botao
+   * some, em vez de aparecer e nao fazer nada.
+   */
+  anotacaoAbrir: (displayId: string) =>
+    ipcRenderer.send("anotacaoAbrir", displayId),
+
+  /** Destroi a sobreposicao de anotacao */
+  anotacaoFechar: () => ipcRenderer.send("anotacaoFechar"),
+
+  /** Manda os tracos vivos para a sobreposicao desenhar */
+  anotacaoTracos: (
+    tracos: { id: string; nome: string; cor: string; pts: number[] }[],
+  ) => ipcRenderer.send("anotacaoTracos", tracos),
+
+  /** Liga ou desliga a moldura de aviso na borda da tela */
+  anotacaoMoldura: (ligada: boolean) =>
+    ipcRenderer.send("anotacaoMoldura", ligada),
 });

@@ -231,6 +231,18 @@ const config: ForgeConfig = {
           config: "vite.preload.config.ts",
           target: "preload",
         },
+        {
+          // Preload da janela de sobreposicao de anotacao (laser).
+          //
+          // Ele nao e so um preload: monta o proprio DOM e desenha. Entrou
+          // como preload porque `renderer` esta vazio -- o app carrega uma
+          // URL remota, entao nao existe pipeline de renderer local, e criar
+          // um so para uma pagina de canvas traria globais de dev server e
+          // copia de assets para dentro do asar. Ver src/anotacao-preload.ts.
+          entry: "src/anotacao-preload.ts",
+          config: "vite.preload.config.ts",
+          target: "preload",
+        },
       ],
       renderer: [],
     }),

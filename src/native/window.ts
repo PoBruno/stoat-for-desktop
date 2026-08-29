@@ -245,6 +245,12 @@ export function createMainWindow() {
                 name: source.name,
                 isFullScreen: source.id.startsWith("screen"),
                 image: image?.toDataURL(),
+                // Necessario para a anotacao (laser): sem saber QUAL monitor
+                // foi capturado nao da para posicionar a sobreposicao. Ate
+                // 2026-08-28 nem o `source.id` atravessava a ponte -- so o
+                // indice do array voltava, e a identidade da fonte se perdia
+                // aqui dentro. `display_id` vem vazio para fonte de janela.
+                displayId: source.display_id || undefined,
               };
             }),
           );
