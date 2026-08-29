@@ -1,6 +1,7 @@
 
-import { BrowserWindow, app, shell } from "electron";
+import { BrowserWindow, app, ipcMain, shell } from "electron";
 import started from "electron-squirrel-startup";
+import { join } from "node:path";
 
 import { config } from "./native/config";
 import { initDiscordRpc } from "./native/discordRpc";
@@ -113,6 +114,33 @@ if (acquiredLock) {
 
     // handle links externally
     contents.setWindowOpenHandler(({ url }) => {
+      // A janela DESTACADA de uma tela compartilhada e a unica excecao: ela
+      // e do proprio app e precisa da referencia viva ao `opener` para
+      // receber o MediaStream sem reconectar no LiveKit.
+      //
+      // Sem este ramo, ela cairia no `shell.openExternal` abaixo e abriria no
+      // navegador padrao do sistema, fora do Stoat e sem sessao -- pior que
+      // nao ter a feature.
+      if (ehJanelaDestacada(url)) {
+        return {
+          action: "allow",
+          overrideBrowserWindowOptions: {
+            width: 960,
+            height: 560,
+            minWidth: 320,
+            minHeight: 200,
+            resizable: true,
+            autoHideMenuBar: true,
+            backgroundColor: "#000000",
+            webPreferences: {
+              preload: join(__dirname, "preload.js"),
+              contextIsolation: true,
+              nodeIntegration: false,
+            },
+          },
+        };
+      }
+
       if (
         url.startsWith("http:") ||
         url.startsWith("https:") ||
@@ -129,3 +157,37 @@ if (acquiredLock) {
 } else {
   app.quit();
 }
+
+/**
+ * Se esta URL e a janela destacada do proprio app.
+ *
+ * Checa a ORIGEM contra a do app, nao so o caminho: sem isso qualquer site
+ * poderia abrir uma janela sem moldura passando `/popout` no fim da URL.
+ */
+function ehJanelaDestacada(url: string) {
+  try {
+    const alvo = new URL(url);
+    return (
+      alvo.origin === BUILD_URL.origin && alvo.pathname.endsWith("/popout")
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Fixa a janela destacada sobre as demais.
+ *
+ * `fromWebContents(event.sender)` resolve QUAL janela pediu, entao nao ha id
+ * para rastrear nem mapa para manter em sincronia.
+ *
+ * Nivel `screen-saver` e o mais alto que o Electron oferece; e o que
+ * maximiza a chance de ficar sobre um jogo. **Nao funciona sobre tela cheia
+ * exclusiva no Windows** -- ali o jogo assume o compositor. Funciona sobre
+ * borderless windowed, que e o padrao da maioria dos jogos modernos.
+ */
+ipcMain.on("popoutAlwaysOnTop", (event, ligado: boolean) => {
+  const janela = BrowserWindow.fromWebContents(event.sender);
+  if (!janela || janela === mainWindow) return;
+  janela.setAlwaysOnTop(!!ligado, "screen-saver");
+});
