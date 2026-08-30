@@ -3,7 +3,7 @@
   "name": "stoat",
   "productName": "Stoat",
   "description": "Stoat desktop client.",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "main": ".vite/build/main.js",
   "repository": "PoBruno/stoat-for-desktop",
   "scripts": {
