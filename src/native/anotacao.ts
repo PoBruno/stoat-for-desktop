@@ -61,7 +61,11 @@ function abrir(displayId: string) {
   const { x, y, width, height } = display.bounds;
 
   if (janela && !janela.isDestroyed()) {
+    // Destrava para o Windows aceitar a altura cheia, e trava de novo. Sem
+    // isto, trocar de monitor herdaria a mesma altura encolhida.
+    janela.setResizable(true);
     janela.setBounds({ x, y, width, height });
+    janela.setResizable(false);
     displayAtual = displayId;
     return;
   }
@@ -75,7 +79,17 @@ function abrir(displayId: string) {
     backgroundColor: "#00000000",
     frame: false,
     hasShadow: false,
-    resizable: false,
+    // Criada REDIMENSIONAVEL de proposito, e travada logo apos aparecer.
+    //
+    // Com `resizable: false` o Windows prende a janela a area de trabalho e
+    // devolve uma altura menor que a pedida -- 1057 no lugar de 1080, os 23px
+    // exatos da barra de tarefas. Nao e so a moldura que sobe: o traco passa a
+    // ser desenhado num espaco 2% mais curto que a tela capturada, e todo
+    // ponto sai deslocado para cima, cada vez mais perto do rodape.
+    //
+    // Medido em `.claude/scripts/testar-cobertura.js`: so `setBounds` DEPOIS
+    // de mostrar entrega os 1080.
+    resizable: true,
     movable: false,
     minimizable: false,
     maximizable: false,
@@ -108,7 +122,13 @@ function abrir(displayId: string) {
   janela.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
 
   // `showInactive` para nao roubar o foco de quem esta compartilhando.
-  janela.once("ready-to-show", () => janela?.showInactive());
+  janela.once("ready-to-show", () => {
+    janela?.showInactive();
+    // Só depois de aparecer o Windows aceita a altura cheia. Antes disso ele
+    // devolve a área de trabalho, por mais que se peça a tela inteira.
+    janela?.setBounds({ x, y, width, height });
+    janela?.setResizable(false);
+  });
 
   janela.on("closed", () => {
     janela = undefined;
