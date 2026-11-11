@@ -74,8 +74,8 @@ const store = new Store({
  * Shim for `electron-store` because typings are broken
  */
 class Config {
-  sync() {
-    mainWindow.webContents.send("config", {
+  snapshot(): DesktopConfig {
+    return {
       firstLaunch: this.firstLaunch,
       customFrame: this.customFrame,
       minimiseToTray: this.minimiseToTray,
@@ -84,7 +84,11 @@ class Config {
       hardwareAcceleration: this.hardwareAcceleration,
       discordRpc: this.discordRpc,
       windowState: this.windowState,
-    });
+    };
+  }
+
+  sync() {
+    mainWindow.webContents.send("config", this.snapshot());
   }
 
   get firstLaunch() {
@@ -210,6 +214,18 @@ class Config {
 }
 
 export const config = new Config();
+
+/**
+ * Entrega a config ao preload de forma sincrona, no instante em que ele roda.
+ *
+ * Antes o preload so recebia a config pelo `sync()` do `did-finish-load`, que
+ * dispara DEPOIS dos scripts da pagina. Com o bundle web em cache, o Titlebar
+ * lia `desktopConfig.get().windowState` ainda undefined, a excecao derrubava o
+ * render inteiro e a janela abria preta -- em toda abertura, para todo mundo.
+ */
+ipcMain.on("config:get", (event) => {
+  event.returnValue = config.snapshot();
+});
 
 ipcMain.on("config", (_, newConfig: Partial<DesktopConfig>) => {
   console.info("Received new configuration", newConfig);
