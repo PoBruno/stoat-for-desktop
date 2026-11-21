@@ -13,6 +13,7 @@ import {
 
 import windowIconAsset from "../../assets/desktop/icon.png?asset";
 
+import { audioDoCompartilhamento } from "./audioDoCompartilhamento";
 import { config } from "./config";
 import { updateTrayMenu } from "./tray";
 import { startVirtualMic } from "./virtualMic";
@@ -225,13 +226,19 @@ export function createMainWindow() {
           ipcMain.once(
             "screenPickerCallback",
             (_, idx: number, audio: boolean) => {
-              if (idx < 0 || idx > sources.length) {
+              if (idx < 0 || idx >= sources.length) {
                 callback({});
               } else {
+                // De onde vem o som: so o programa da janela, ou o sistema
+                // sem o Stoat. Com `loopback` puro quem assistia ouvia a
+                // propria voz de volta (ver audioDoCompartilhamento.ts).
                 audio
                   ? callback({
                       video: sources[idx],
-                      audio: "loopback",
+                      audio: audioDoCompartilhamento(
+                        sources[idx].id,
+                        app.getAppMetrics().map((p) => p.pid),
+                      ),
                     })
                   : callback({
                       video: sources[idx],

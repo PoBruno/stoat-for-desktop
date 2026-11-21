@@ -144,7 +144,21 @@ const config: ForgeConfig = {
   makers,
   hooks: {
     // Copy the node-pipewire dist to the app on linux
-    packageAfterCopy: async (_config, buildPath, _version, platform) => {
+    packageAfterCopy: async (_config, buildPath, _version, platform, arch) => {
+      // koffi: le a user32 para achar o processo da janela compartilhada e
+      // capturar so o som dele (src/native/audioDoCompartilhamento.ts). Fica
+      // fora do bundle do Vite; copia-se so o binario da plataforma alvo (o
+      // pacote inteiro tem 84 MB, com binarios de 18 plataformas).
+      if (platform === "win32") {
+        const koffi = path.join(buildPath, "node_modules/koffi");
+        for (const arquivo of ["index.js", "package.json", "LICENSE.txt"]) {
+          fs.cpSync(`node_modules/koffi/${arquivo}`, path.join(koffi, arquivo));
+        }
+        fs.cpSync(
+          `node_modules/koffi/build/koffi/win32_${arch}/koffi.node`,
+          path.join(koffi, `build/koffi/win32_${arch}/koffi.node`),
+        );
+      }
       if (platform === "linux") {
         // Copy only the files we need to run the code, which is dist, LICENSE, and package.json
         fs.cpSync(
