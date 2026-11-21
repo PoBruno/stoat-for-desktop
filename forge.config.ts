@@ -80,6 +80,8 @@ if (process.env.ENABLE_FLATPAK) {
           "512x512": `${ASSET_DIR}/hicolor/512x512.png`,
         } as unknown,
         categories: ["Network"],
+        // open stoat:// links
+        mimeType: ["x-scheme-handler/stoat"],
         modules: [
           // use the latest zypak -- Electron sandboxing for Flatpak
           {
@@ -115,8 +117,6 @@ if (process.env.ENABLE_FLATPAK) {
         "--talk-name=com.canonical.indicator.application",
         "--talk-name=com.canonical.Unity",
         "--env=XCURSOR_PATH=/run/host/user-share/icons:/run/host/share/icons",
-        "--env=ELECTRON_TRASH=gio",
-        "--env=TMPDIR=xdg-run/app/chat.stoat.StoatDesktop",
       ],
         files: [],
       } as MakerFlatpakOptionsConfig,
@@ -129,6 +129,8 @@ const config: ForgeConfig = {
     asar: true,
     name: STRINGS.name,
     executableName: STRINGS.execName,
+    // open stoat:// links (on mac)
+    protocols: [{ name: STRINGS.name, schemes: ["stoat"] }],
     icon:
       process.platform === "darwin"
         ? `${ASSET_DIR}/icon.icon`

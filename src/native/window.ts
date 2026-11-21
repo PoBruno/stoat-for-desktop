@@ -15,6 +15,7 @@ import windowIconAsset from "../../assets/desktop/icon.png?asset";
 
 import { config } from "./config";
 import { updateTrayMenu } from "./tray";
+import { startVirtualMic } from "./virtualMic";
 
 // global reference to main window
 export let mainWindow: BrowserWindow;
@@ -196,7 +197,16 @@ export function createMainWindow() {
 
   // Create display media request handler
   session.defaultSession.setDisplayMediaRequestHandler(
-    (request, callback) => {
+    (request, originalCallback) => {
+      const callback = async (streams: Electron.Streams) => {
+        try {
+          if (streams.video) await startVirtualMic();
+        } catch (e) {
+          console.error("Virtual mic setup error", e);
+        } finally {
+          originalCallback(streams);
+        }
+      };
       desktopCapturer
         .getSources({ types: ["screen", "window"], fetchWindowIcons: true })
         .then((sources) => {
@@ -254,23 +264,27 @@ export function createMainWindow() {
               };
             }),
           );
-        });
+        })
+        .catch(() => originalCallback(null));
     },
     { useSystemPicker: true },
   );
-
-  // push world events to the window
-  ipcMain.on("minimise", () => mainWindow.minimize());
-  ipcMain.on("maximise", () =>
-    mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize(),
-  );
-  ipcMain.on("close", () => mainWindow.close());
 
   // mainWindow.webContents.openDevTools();
 
   // let i = 0;
   // setInterval(() => setBadgeCount((++i % 30) + 1), 1000);
 }
+
+// Push world events to the window
+//
+// The window can in theory be recreated, and this is done in practice on macOS,
+// so this is registered app-wide
+ipcMain.on("minimise", () => mainWindow?.minimize());
+ipcMain.on("maximise", () =>
+  mainWindow?.isMaximized() ? mainWindow.unmaximize() : mainWindow?.maximize(),
+);
+ipcMain.on("close", () => mainWindow?.close());
 
 /**
  * Quit the entire app

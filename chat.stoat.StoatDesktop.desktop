@@ -10,5 +10,6 @@ Type=Application
 Icon=chat.stoat.StoatDesktop
 Categories=Network;InstantMessaging;
 StartupWMClass=stoat
+MimeType=x-scheme-handler/stoat;
 X-Desktop-File-Install-Version=0.26
 X-Flatpak=chat.stoat.StoatDesktop
