@@ -4,6 +4,7 @@ import path from "node:path";
 import { BrowserWindow, app, ipcMain, shell } from "electron";
 import started from "electron-squirrel-startup";
 
+import { initAtualizacao } from "./native/atualizacao";
 import { initAutoLaunch } from "./native/autoLaunch";
 import { config } from "./native/config";
 import { encerrarAnotacao, registrarAnotacao } from "./native/anotacao";
@@ -71,13 +72,9 @@ if (process.platform === "linux") {
 // ensure only one copy of the application can run
 const acquiredLock = app.requestSingleInstanceLock();
 
-// Auto-update desativado neste fork.
-//
-// O `update-electron-app` deriva o feed de `package.json.repository`, que
-// apontava para o repositorio oficial do Stoat. Mantido ligado, o app se
-// atualizaria para o binario oficial e perderia o dominio padrao configurado
-// em src/native/window.ts. Para religar, aponte `repository` para o seu
-// proprio fork e publique releases la.
+// Auto-update: electron-updater lendo os releases de PoBruno/stoat-for-desktop
+// (src/native/atualizacao.ts). O antigo `update-electron-app` foi removido:
+// ele so serve ao Squirrel, e o instalador aqui e NSIS.
 
 if (acquiredLock) {
   // facilitate stoat:// links
@@ -113,6 +110,7 @@ if (acquiredLock) {
     initVirtualMic();
     registrarAnotacao();
     initAutoLaunch();
+    initAtualizacao();
 
     // follow the link the app was started with; after the tray exists, as
     // showing the window updates the tray menu

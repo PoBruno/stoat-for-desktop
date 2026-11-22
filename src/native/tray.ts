@@ -4,6 +4,11 @@ import trayIconAsset from "../../assets/desktop/icon.png?asset";
 import macOsTrayIconAsset from "../../assets/desktop/iconTemplate.png?asset";
 import { version } from "../../package.json";
 
+import {
+  estadoDaAtualizacao,
+  procurarAtualizacao,
+  reiniciarEAtualizar,
+} from "./atualizacao";
 import { mainWindow, quitApp } from "./window";
 
 // internal tray state
@@ -37,7 +42,43 @@ export function initTray() {
   });
 }
 
+/** Itens do menu que dependem do estado da atualizacao automatica. */
+function itensDeAtualizacao(): Electron.MenuItemConstructorOptions[] {
+  const estado = estadoDaAtualizacao();
+  switch (estado.fase) {
+    case "pronta":
+      return [
+        {
+          label: `Reiniciar para atualizar (v${estado.versao})`,
+          type: "normal",
+          click: reiniciarEAtualizar,
+        },
+      ];
+    case "baixando":
+      return [
+        {
+          label: `Baixando atualização v${estado.versao}… ${estado.progresso}%`,
+          type: "normal",
+          enabled: false,
+        },
+      ];
+    case "procurando":
+      return [
+        { label: "Procurando atualizações…", type: "normal", enabled: false },
+      ];
+    default:
+      return [
+        {
+          label: "Procurar atualizações",
+          type: "normal",
+          click: () => void procurarAtualizacao(true),
+        },
+      ];
+  }
+}
+
 export function updateTrayMenu() {
+  if (!tray) return;
   tray.setContextMenu(
     Menu.buildFromTemplate([
       { label: "Stoat", type: "normal", enabled: false },
@@ -52,6 +93,7 @@ export function updateTrayMenu() {
           },
         ]),
       },
+      ...itensDeAtualizacao(),
       { type: "separator" },
       {
         label: mainWindow.isVisible() ? "Hide App" : "Show App",

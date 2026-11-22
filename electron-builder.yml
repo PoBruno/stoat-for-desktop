@@ -19,6 +19,16 @@ copyright: Copyright (C) 2026 PoBruno
 directories:
   output: out/make/nsis
 
+# De onde o app instalado busca atualizacoes (electron-updater). Daqui saem o
+# `app-update.yml` dos pacotes Linux e os `latest*.yml` de cada build; quem
+# sobe tudo para o GitHub e o .claude/scripts/desktop-release.sh, por isso
+# o build sempre roda com `--publish never`.
+publish:
+  provider: github
+  owner: PoBruno
+  repo: stoat-for-desktop
+  releaseType: release
+
 # O nome nao leva a versao de proposito: o app web aponta para
 # releases/latest/download/stoat-setup.exe, e assim esse link continua
 # valendo em toda versao futura.

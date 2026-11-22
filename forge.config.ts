@@ -179,6 +179,32 @@ const config: ForgeConfig = {
       }
     },
     /**
+     * Grava `resources/app-update.yml`, que diz ao electron-updater onde
+     * procurar versoes novas (src/native/atualizacao.ts).
+     *
+     * No Linux quem grava e o proprio electron-builder (junto do
+     * `package-type` que separa .deb de .pacman). No Windows nao: o
+     * instalador nasce de `--prepackaged`, e o electron-builder so escreve
+     * esse arquivo quando ele mesmo empacota. Sem o arquivo o download da
+     * atualizacao falha com ENOENT.
+     */
+    postPackage: async (_config, { platform, outputPaths }) => {
+      if (platform !== "win32") return;
+      for (const pasta of outputPaths) {
+        fs.writeFileSync(
+          path.join(pasta, "resources", "app-update.yml"),
+          [
+            "provider: github",
+            "owner: PoBruno",
+            "repo: stoat-for-desktop",
+            "releaseType: release",
+            "updaterCacheDirName: stoat-updater",
+            "",
+          ].join("\n"),
+        );
+      }
+    },
+    /**
      * Gera o instalador do Windows depois que o Forge empacota.
      *
      * Fica num hook, e nao num maker, porque o electron-builder nao e um
@@ -207,7 +233,9 @@ const config: ForgeConfig = {
       console.log("[nsis] gerando o instalador do Windows");
       execFileSync(
         process.execPath,
-        [cli, "--prepackaged", empacotado, "--win", "nsis"],
+        // `--publish never`: com `publish` no electron-builder.yml ele tentaria
+        // subir para o GitHub sozinho. Quem publica e o script de release.
+        [cli, "--prepackaged", empacotado, "--win", "nsis", "--publish", "never"],
         { stdio: "inherit" },
       );
 

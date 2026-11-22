@@ -52,6 +52,21 @@ contextBridge.exposeInMainWorld("native", {
   isWayland: () => ipcRenderer.invoke("getIsWayland"),
 
   /**
+   * Atualizacao automatica (src/native/atualizacao.ts). Existe so a partir da
+   * v1.9.0; o web checa a presenca antes de desenhar qualquer indicador.
+   */
+  atualizacao: {
+    estado: () => ipcRenderer.invoke("atualizacao:estado"),
+    procurar: () => ipcRenderer.invoke("atualizacao:procurar"),
+    instalar: () => ipcRenderer.invoke("atualizacao:instalar"),
+    aoMudar: (callback: (estado: unknown) => void) => {
+      const ouvinte = (_: unknown, estado: unknown) => callback(estado);
+      ipcRenderer.on("atualizacao:estado", ouvinte);
+      return () => ipcRenderer.removeListener("atualizacao:estado", ouvinte);
+    },
+  },
+
+  /**
    * Fixa a janela DESTACADA sobre as demais.
    *
    * Exposto na ponte porque o botao vive dentro da propria janela destacada,
