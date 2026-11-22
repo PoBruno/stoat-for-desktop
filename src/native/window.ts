@@ -8,6 +8,7 @@ import {
   desktopCapturer,
   ipcMain,
   nativeImage,
+  screen,
   session,
 } from "electron";
 
@@ -209,7 +210,15 @@ export function createMainWindow() {
         }
       };
       desktopCapturer
-        .getSources({ types: ["screen", "window"], fetchWindowIcons: true })
+        .getSources({
+          types: ["screen", "window"],
+          fetchWindowIcons: true,
+          // Miniatura de cada tela e janela, como o seletor do Discord. Sem
+          // isso "Screen 1" e "Screen 2" nao diziam qual monitor era qual.
+          // 16:9 pequeno: o seletor mostra em grade, e cada JPEG fica em
+          // poucos KB mesmo com dezenas de janelas abertas.
+          thumbnailSize: { width: 384, height: 216 },
+        })
         .then((sources) => {
           // Shortcut for linux wayland.
           if (sources.length == 1) {
@@ -246,9 +255,22 @@ export function createMainWindow() {
               }
             },
           );
+          // Monitores do sistema, para dizer qual tela e a principal e qual
+          // a resolucao. `display_id` da fonte casa com `display.id`.
+          const monitores = screen.getAllDisplays();
+          const principal = screen.getPrimaryDisplay().id;
+
           mainWindow.webContents.send(
             "screenPicker",
             sources.map((source, idx) => {
+              const monitor = monitores.find(
+                (d) => String(d.id) === source.display_id,
+              );
+              const miniatura = source.thumbnail.isEmpty()
+                ? undefined
+                : `data:image/jpeg;base64,${source.thumbnail
+                    .toJPEG(70)
+                    .toString("base64")}`;
               const image = source.appIcon;
               if (image) {
                 if (image.getAspectRatio() > 1) {
@@ -268,6 +290,20 @@ export function createMainWindow() {
                 // indice do array voltava, e a identidade da fonte se perdia
                 // aqui dentro. `display_id` vem vazio para fonte de janela.
                 displayId: source.display_id || undefined,
+                // Desde a v1.9.1: o seletor mostra em grade com previa.
+                thumbnail: miniatura,
+                monitor: monitor
+                  ? {
+                      principal: monitor.id === principal,
+                      // Tamanho real em pixels, como o Windows mostra.
+                      largura: Math.round(
+                        monitor.size.width * monitor.scaleFactor,
+                      ),
+                      altura: Math.round(
+                        monitor.size.height * monitor.scaleFactor,
+                      ),
+                    }
+                  : undefined,
               };
             }),
           );

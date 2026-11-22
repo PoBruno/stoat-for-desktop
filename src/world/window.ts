@@ -39,6 +39,10 @@ contextBridge.exposeInMainWorld("native", {
         isFullScreen: boolean;
         image?: string;
         displayId?: string;
+        /** Previa em JPEG (data URL), desde a v1.9.1 */
+        thumbnail?: string;
+        /** Monitor da fonte de tela, desde a v1.9.1 */
+        monitor?: { principal: boolean; largura: number; altura: number };
       }[],
     ) => void,
   ) => {
